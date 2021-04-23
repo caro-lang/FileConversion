@@ -25,6 +25,7 @@ class ListBoxWidget(QtWidgets.QListWidget):
             #event.ignore()
             super(ListBoxWidget, self).dragMoveEvent(event)
 
+        #Drag&Drop
     def dropEvent(self, event):
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
@@ -34,7 +35,7 @@ class ListBoxWidget(QtWidgets.QListWidget):
             for url in event.mimeData().urls():
                 # https://doc.qt.io/qt-5/qurl.html
                 print(url)
-                cases = [".pdf", ".csv", ".doc", ".docx"]
+                cases = [".pdf", ".csv", ".doc", ".docx", "."]
                 for case in cases :
                     print(case)
                     if case.casefold() in url.toString():
@@ -232,6 +233,7 @@ class Ui_MainWindow(object):
         self.pushButton_2.setText(_translate("MainWindow", "Alles löschen"))
         self.pushButton_3.setText(_translate("MainWindow", "Upload"))
 
+        #convert Button
         self.pushButton.setText(_translate("MainWindow", "Konvertieren"))
         self.pushButton.clicked.connect(self.convert)
 
@@ -248,7 +250,7 @@ class Ui_MainWindow(object):
         self.open_dialog_box()
 
     def open_dialog_box(self):
-        filter= "(*.DOC *.DOCX *.CSV *.PDF)"
+        filter= "(*.DOC *.DOCX *.CSV *.PDF *.doc *.docx *.csv *.pdf )"
         fname = QFileDialog.getOpenFileName(None, "Window name", "", filter)
         self.listWidget.addItem(fname[0])
 
