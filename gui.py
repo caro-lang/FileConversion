@@ -1,10 +1,39 @@
 # -*- coding: utf-8 -*-
-
+import os
+import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QFileDialog, QAbstractItemView
+from PyQt5.QtWidgets import QMainWindow, QApplication, QTextEdit, QFileDialog, QAbstractItemView
 from PyQt5.QtCore import Qt, QUrl
 
+class Stream(QtCore.QObject):
+    """Redirects console output to text widget."""
+    newText = QtCore.pyqtSignal(str)
 
+    def write(self, text):
+        self.newText.emit(str(text))
+
+
+class GenMast(QMainWindow):
+    """Main application window."""
+
+    def onUpdateText(self, text):
+        """Write console output to text widget."""
+        cursor = self.process.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.insertText(text)
+        self.process.setTextCursor(cursor)
+        self.process.ensureCursorVisible()
+
+    def closeEvent(self, event):
+        """Shuts down application on close."""
+        # Return stdout to defaults.
+        sys.stdout = sys.__stdout__
+        super().closeEvent(event)
+
+
+
+
+#DRAG & DROP
 class ListBoxWidget(QtWidgets.QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -35,9 +64,16 @@ class ListBoxWidget(QtWidgets.QListWidget):
             for url in event.mimeData().urls():
                 # https://doc.qt.io/qt-5/qurl.html
                 print(url)
-                cases = [".pdf", ".csv", ".doc", ".docx", "."]
+                cases = [".pdf", ".csv", ".doc", ".docx", "/"]
                 for case in cases :
                     print(case)
+                    if(case=="/"):
+                        #print(event.mimeData())
+                        for dir in os.listdir(str(url.toLocalFile())):
+                            print(dir)
+                            links.append(str(url.toLocalFile())+dir)
+                        break
+
                     if case.casefold() in url.toString():
                         links.append(str(url.toLocalFile()))
                         break
@@ -58,6 +94,8 @@ class Ui_MainWindow(object):
         MainWindow.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
         MainWindow.setStyleSheet("background-color: rgb(255, 255, 255);")
 
+        sys.stdout = Stream(newText=self.onUpdateText)
+
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setMaximumSize(QtCore.QSize(650, 580))
         self.centralwidget.setObjectName("centralwidget")
@@ -73,48 +111,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
 
-        self.label = QtWidgets.QLabel(self.widget)
-        self.label.setEnabled(True)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
-        self.label.setSizePolicy(sizePolicy)
-        self.label.setMinimumSize(QtCore.QSize(60, 40))
-        font = QtGui.QFont()
-        font.setFamily("Helvetica")
-        font.setBold(True)
-       # font.setWeight(75)
-        self.label.setFont(font)
-        self.label.setTextFormat(QtCore.Qt.AutoText)
-        self.label.setScaledContents(True)
-        self.label.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
-        self.label.setWordWrap(False)
-        self.label.setIndent(-1)
-        self.label.setTextInteractionFlags(QtCore.Qt.NoTextInteraction)
-        self.label.setObjectName("label")
-        self.horizontalLayout_2.addWidget(self.label)
-        self.lineEdit = QtWidgets.QLineEdit(self.widget)
-        #self.lineEdit.setStyleSheet()
-        #("MainWindow", "<html><head/><body><p><span style=\" font-size:18pt;\">Block</span></p></body></html>"))
+#start entfernen
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lineEdit.sizePolicy().hasHeightForWidth())
-
-        self.lineEdit.setSizePolicy(sizePolicy)
-        self.lineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.lineEdit.setFrame(True)
-        self.lineEdit.setObjectName("lineEdit")
-        self.horizontalLayout_2.addWidget(self.lineEdit)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_2.addItem(spacerItem)
-        spacerItem1 = QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_2.addItem(spacerItem1)
-        self.verticalLayout.addLayout(self.horizontalLayout_2)
-        spacerItem2 = QtWidgets.QSpacerItem(20, 100, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Maximum)
-        self.verticalLayout.addItem(spacerItem2)
         self.label_2 = QtWidgets.QLabel(self.widget)
 
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
@@ -134,9 +132,14 @@ class Ui_MainWindow(object):
         self.label_2.setScaledContents(True)
         self.label_2.setObjectName("label_2")
         self.verticalLayout.addWidget(self.label_2)
+
+        self.label_2.setFont(font)
+        self.label_2.setScaledContents(True)
+        self.label_2.setObjectName("label_2")
+        self.verticalLayout.addWidget(self.label_2)
         self.listWidget = ListBoxWidget()
-      #  self.listbox_view = ListBoxWidget(self)
-      #  self.listWidget = QtWidgets.QListWidget(self.widget)
+        #  self.listbox_view = ListBoxWidget(self)
+        #  self.listWidget = QtWidgets.QListWidget(self.widget)
         self.listWidget.setFrameShape(QtWidgets.QFrame.Box)
         self.listWidget.setFrameShadow(QtWidgets.QFrame.Plain)
         self.listWidget.setDragDropMode(QAbstractItemView.DragDrop)
@@ -146,12 +149,16 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.listWidget)
 
+
         spacerItem3 = QtWidgets.QSpacerItem(20, 5, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Maximum)
         self.verticalLayout.addItem(spacerItem3)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.horizontalLayout.setContentsMargins(-1, -1, -1, 10)
         self.horizontalLayout.setObjectName("horizontalLayout")
+
+
+
         self.pushButton = QtWidgets.QPushButton(self.widget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
@@ -171,6 +178,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addWidget(self.pushButton)
         spacerItem4 = QtWidgets.QSpacerItem(60, 20, QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem4)
+
 
         self.pushButton_2 = QtWidgets.QPushButton(self.widget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Maximum)
@@ -210,14 +218,35 @@ class Ui_MainWindow(object):
         self.pushButton_3.setObjectName("pushButton_3")
         self.horizontalLayout.addWidget(self.pushButton_3)
         self.verticalLayout.addLayout(self.horizontalLayout)
+
+
+
+        # Hier START neuer QTextEdit
+        spacerItem4 = QtWidgets.QSpacerItem(20, 50, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Maximum)
+        self.verticalLayout.addItem(spacerItem4)
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.horizontalLayout.setContentsMargins(-1, -1, -1, 10)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+
+        # Create the text output widget.
+        self.outputWidget = QtWidgets.QTextEdit( readOnly=True)
+        self.outputWidget.setFrameShape(QtWidgets.QFrame.Box)
+        self.outputWidget.setFrameShadow(QtWidgets.QFrame.Plain)
+        self.outputWidget.setObjectName("outputWidget")
+
+        self.verticalLayout.addWidget(self.outputWidget)
+
+
+        spacerItem4 = QtWidgets.QSpacerItem(20, 50, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Maximum)
+        self.verticalLayout.addItem(spacerItem4)
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.horizontalLayout.setContentsMargins(-1, -1, -1, 10)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+
+
         MainWindow.setCentralWidget(self.centralwidget)
-    #    self.menubar = QtWidgets.QMenuBar(MainWindow)
-    #    self.menubar.setGeometry(QtCore.QRect(0, 0, 650, 22))
-    #    self.menubar.setObjectName("menubar")
-    #    MainWindow.setMenuBar(self.menubar)
-       # self.statusbar = QtWidgets.QStatusBar(MainWindow)
-       # self.statusbar.setObjectName("statusbar")
-       # MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -226,7 +255,7 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         #self.label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:18pt;\">Block</span></p></body></html>"))
-        self.label.setText(_translate("MainWindow", "Block"))
+        #self.label.setText(_translate("MainWindow", "Block"))
         #self.label_2.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:18pt;\">Beteiligte Dokumente</span></p></body></html>"))
         self.label_2.setText(_translate("MainWindow", "Beteiligte Dokumente"))
         self.pushButton.setText(_translate("MainWindow", "Konvertieren"))
@@ -256,20 +285,36 @@ class Ui_MainWindow(object):
 
     def remove(self):
         for SelectedItem in self.listWidget.selectedItems():
+            print(SelectedItem.text(), " wurde gelöscht")
             self.listWidget.takeItem(self.listWidget.row(SelectedItem))
 
+
     def convert(self):
-        self.lineEdit.text()
-        print(self.lineEdit.text())
+        print("Konvertieren startet")
+        textDataList = []
+        for i in range(0, self.listWidget.count()):
+            print(self.listWidget.item(i).text())
+            textDataList.append(self.listWidget.item(i).text())
+
+        print(textDataList)
+        #print(self.lineEdit.text())
 
     def clicked(self, text):
         #self.label.setText(text)
         #self.label.adjustSize()
         print(text)
 
+    def onUpdateText(self, text):
+        """Write console output to text widget."""
+        cursor = self.outputWidget.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.insertText(text)
+        self.outputWidget.setTextCursor(cursor)
+  #      self.process.ensureCursorVisible()
+
 
 if __name__ == "__main__":
-    import sys
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
